@@ -1,0 +1,127 @@
+%str=char('aqi','co','no2','o3','pm10','pm2_5','so2');
+
+%out_dir=('/data1/huanghe/station_2019/');
+out_dir=('/data1/huanghe/2020PM25/')
+addpath(genpath('/data1/huanghe/AHI_ERA'));
+%in_dir1=('/data1/huanghe/station_2019/2019/'); %value from 20190101-20191116
+in_dir1=('/data1/huanghe/2020PM25/2020/')
+%in_dir2=('/data1/huanghe/station_2019/201911/'); %20191121-20191231
+txt=dir([in_dir1,'AQI_*.txt']);
+len=length(txt);
+n=0;
+for index=1:len
+filename=txt(index).name;
+%if ~isempty(strfind(filename,'AQI'))
+n=n+1;
+station_name=filename(5:8);
+pm25.station_name(n)=str2num(station_name);
+filedata=importdata([in_dir1,filename]);
+v_data=filedata.data;
+ 
+%%save time------------------------------------
+if (n<2)
+date=v_data(:,1);
+date1=num2str(date);%double -> char
+local_hour=date1(:,9:10);
+local_date=date1(:,1:8);
+
+a=str2num(local_date);
+b=str2num(local_hour);
+
+pm25.date=a;
+pm25.hour=b;
+
+%convert local time to UTC
+year=fix(a./10000);
+month=fix(a./100)-year.*100;
+day=a-year.*10000-month.*100;
+xx=datenum(year,month,day,b,0,0)-datenum(0,0,0,8,0,0);
+[year,month,day,hour,~,~] = datevec(xx);
+pm25.year_utc = year;
+pm25.month_utc = month;
+pm25.day_utc = day;
+pm25.hour_utc = hour;
+pm25.date_utc = pm25.year_utc.*10000+pm25.month_utc.*100+pm25.day_utc;
+[yday] = jday(pm25.year_utc,pm25.month_utc,pm25.day_utc);%function in /Volumes/hh/nightpm25
+pm25.yday_utc = yday;
+
+d1=num2str(year);
+d2=num2str(month,'%02d');
+d3=num2str(yday,'%02d');
+d4=num2str(hour,'%02d');
+pm25.date_utc_char=[d1 d2 d3 d4];%time in char
+
+end
+%save value————————————————————————————————————————
+pm25.pm25(:,n)=v_data(:,2);
+pm25.pm10(:,n)=v_data(:,3);
+pm25.o3(:,n)=v_data(:,4);
+pm25.co(:,n)=v_data(:,5);
+pm25.so2(:,n)=v_data(:,6);
+pm25.no2(:,n)=v_data(:,7);
+
+%end
+end
+file1='/data1/huanghe/station_2019/201911/stationlist.txt';
+c=importdata(file1);
+pm25.site=c.textdata(2:end,1);
+pm25.lat=c.data(:,1);
+pm25.lon=c.data(:,2);
+save([out_dir,'2020.dat'],'pm25')；
+
+
+
+%%%usless
+for i=1:length(str)
+
+a1=str(i,:);
+a1=strrep(a1,' ','');
+a11=[out_dir,a1];
+if ~exist([a11,'.dat'],'file')
+
+a=importdata(file1);%pm2.5
+b=a.data; %pm2.5 value,row:station,column��time
+
+pm25.value=b(2:end,:);
+
+b1=a.textdata;
+b1=b1(2:end,:);%datetime,cell
+
+b2=cell2mat(b1);%datetime,char
+b3=str2num(b2);%datetime,double
+b4=b2(:,9:10);
+b4=str2num(b4);%hour,double
+b5=b2(:,1:8);
+b5=str2num(b5);
+%convert local time to UTC
+
+pm25.date=b5;
+pm25.hour=b4;
+year=fix(b5./10000);
+month=fix(b5./100)-year.*100;
+day=b5-year.*10000-month.*100;
+xx=datenum(year,month,day,b4,0,0)-datenum(0,0,0,8,0,0);
+[year,month,day,hour,~,~] = datevec(xx);
+pm25.year_utc = year;
+pm25.month_utc = month;
+pm25.day_utc = day;
+pm25.hour_utc = hour;
+pm25.date_utc = pm25.year_utc.*10000+pm25.month_utc.*100+pm25.day_utc;
+[yday] = jday(pm25.year_utc,pm25.month_utc,pm25.day_utc);%function in /Volumes/hh/nightpm25
+pm25.yday_utc = yday;
+
+d1=num2str(year);
+d2=num2str(month,'%02d');
+d3=num2str(yday,'%02d');
+d4=num2str(hour,'%02d');
+pm25.date_utc_char=[d1 d2 d3 d4];%time in char
+
+file2=('/data1/huanghe/station_2019/site_num.txt');
+c=textread(file2);%save sitesID,longitute,latitude
+pm25.lon=c(:,2);
+pm25.lat=c(:,3);
+pm25.site=c(:,1);
+
+save([a11,'.dat'],'pm25')
+end
+end
