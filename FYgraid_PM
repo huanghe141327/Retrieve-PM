@@ -1,0 +1,84 @@
+agri_lat=importdata('C:\Users\huanghe\Desktop\FY4\FY4_4KMLAT.mat');
+agri_lon=importdata('C:\Users\huanghe\Desktop\FY4\FY4_4KMLON.mat');
+R =  6371.012;
+input.agri_lon = [80, 140];
+input.agri_lat = [15, 55];
+
+N=1;
+for I=1:length(pm_site.lat)
+if pm_site.lon(I)>=input.agri_lon(1) && pm_site.lon(I)<=input.agri_lon(2) && ...
+pm_site.lat(I)>=input.agri_lat(1) && pm_site.lat(I)<=input.agri_lat(2)
+agri_site.num(N) = pm_site.num(I);
+agri_site.lon(N) = pm_site.lon(I);
+agri_site.lat(N) = pm_site.lat(I);
+dis = (distance(agri_lat,agri_lon,pm_site.lat(I),pm_site.lon(I)))./180.*pi.*R;
+[row,col]=find(dis==min(min(dis)));
+mval=min(min(dis));
+agri_site.row(N) = row;
+agri_site.col(N) = col;
+agri_site.mval(N) = mval;
+% eg: the pixel number [1 1201*801]
+% p_num: 1-801, line 1 and column  1:801  % index of min distance between ahi and surface pm
+agri_site.p_num(N) = (col-1)*size(agri_lon,2)+row;
+N=N+1;
+end
+end
+length(pm_site.lat)
+N=898;
+for I=898:length(pm_site.lat)
+if pm_site.lon(I)>=input.agri_lon(1) && pm_site.lon(I)<=input.agri_lon(2) && ...
+pm_site.lat(I)>=input.agri_lat(1) && pm_site.lat(I)<=input.agri_lat(2)
+agri_site.num(N) = pm_site.num(I);
+agri_site.lon(N) = pm_site.lon(I);
+agri_site.lat(N) = pm_site.lat(I);
+dis = (distance(agri_lat,agri_lon,pm_site.lat(I),pm_site.lon(I)))./180.*pi.*R;
+[row,col]=find(dis==min(min(dis)));
+mval=min(min(dis));
+agri_site.row(N) = row;
+agri_site.col(N) = col;
+agri_site.mval(N) = mval;
+% eg: the pixel number [1 1201*801]
+% p_num: 1-801, line 1 and column  1:801  % index of min distance between ahi and surface pm
+agri_site.p_num(N) = (col-1)*size(agri_lon,2)+row;
+N=N+1;
+end
+end
+pm25=pm.pm25(:,1:1499);
+size(pm.pm25,1)
+addpath('E:\FTP\gene_bt_pm_data')
+
+pm.pm25(pm.pm25==-999)=nan;
+up_num = unique(agri_site.p_num);
+for J = 1:length(up_num)
+ind = find(agri_site.p_num == up_num(J));
+if length(ind)>1
+ahi_pm.slon(J) = nanmean(pm.nlon(ind));
+ahi_pm.slat(J) = nanmean(pm.nlat(ind));
+ahi_pm.col(J) = agri_site.col(ind(1));
+ahi_pm.row(J) = agri_site.row(ind(1));
+ahi_pm.mval(J) = nanmean(agri_site.mval(ind));
+for d=1:size(pm.pm25,1)
+ahi_pm.pm25(d,J) = nanmean(pm.pm25(d,ind),2);
+end
+else
+ahi_pm.slon(J) = pm.nlon(ind);
+ahi_pm.slat(J) = pm.nlat(ind);
+ahi_pm.col(J) =  agri_site.col(ind);
+ahi_pm.row(J) =  agri_site.row(ind);
+ahi_pm.mval(J) = agri_site.mval(ind);
+for d=1:size(pm.pm25,1)
+ahi_pm.pm25(d,J) = pm.pm25(d,ind);
+end
+end
+clear ind;
+end
+
+
+for k=1:length(ahi_pm.row)
+ahi_pm.lon(1,k)=agri_lon(ahi_pm.row(k),ahi_pm.col(k));
+ahi_pm.lat(1,k)=agri_lat(ahi_pm.row(k),ahi_pm.col(k));
+end
+ahi_pm.date_utc = pm.date_utc; ahi_pm.year_utc = pm.year_utc;
+ahi_pm.month_utc = pm.month_utc; ahi_pm.day_utc = pm.day_utc;
+ahi_pm.hour_utc = pm.hour_utc; ahi_pm.yday_utc = pm.yday_utc;
+save('E:\TEST2020\agri_pm2019.mat','ahi_pm')
