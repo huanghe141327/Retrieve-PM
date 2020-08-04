@@ -1,6 +1,6 @@
 filepath='/pub/work/huoyf/FY/';
 x1=load('/pub/work/huoyf/FY/FY201901.mat');
-f=fieldnames(x1.FY);
+f=fieldnames(x1.FY);%结构体名
 num1=[1:18,23:25];
 num2=[19:22];
 for j=2:12
