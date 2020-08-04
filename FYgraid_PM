@@ -24,8 +24,8 @@ N=N+1;
 end
 end
 length(pm_site.lat)
-N=898;
-for I=898:length(pm_site.lat)
+N=1;
+for I=1:length(pm_site.lat)
 if pm_site.lon(I)>=input.agri_lon(1) && pm_site.lon(I)<=input.agri_lon(2) && ...
 pm_site.lat(I)>=input.agri_lat(1) && pm_site.lat(I)<=input.agri_lat(2)
 agri_site.num(N) = pm_site.num(I);
