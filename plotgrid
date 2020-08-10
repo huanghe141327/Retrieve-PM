@@ -1,0 +1,99 @@
+%绘图
+m_proj get
+fpni='/Volumes/hh/down/gadm36_CHN_shp/gadm36_CHN_1.shp';%中国地图shp文件所在路径
+China=shaperead(fpni);
+boux=[China(:).X];bouy=[China(:).Y];%分别是获取经度X信息和纬度Y信息
+
+%set(gcf,'position',[0 0 1440 780]);%设置图形窗口位置和大小
+a=ones(1215,1);
+figure(1)
+%subplot(1,2,1)
+m_proj('Mercator','lon',[70 140],'lat',[15 55]);%设置投影方式为：墨卡托，地图显示范围
+m_scatter(lon,lat,3,pm,'filled', 'MarkerFaceColor', 'flat', 'MarkerEdgeColor', 'w','linewi',1)
+colormap('jet')
+hold on
+m_plot(boux,bouy,'k');%最关键的一句，绘制地图
+m_proj get
+m_grid('linestyle','none','linewidth',1,'tickdir','out','xaxisloc','bottom','yaxisloc','left','fontsize',12);
+caxis([0,200])
+colorbar()
+title('annual RMSE')
+xlabel('Longitude')
+ylabel('Latitude')
+
+subplot(1,2,2)
+m_proj('Mercator','lon',[118 122.5],'lat',[29.5 33]);%设置投影方式为：墨卡托，地图显示范围
+
+m_scatter(loc_y(:,3),loc_y(:,4),80,loc_y(:,1),'filled', 'MarkerFaceColor', 'flat', 'MarkerEdgeColor', 'w','linewi',1)
+colormap('jet')
+hold on
+m_plot(boux,bouy,'k');%最关键的一句，绘制地图
+m_proj get
+m_grid('linestyle','none','linewidth',2,'tickdir','out','xaxisloc','bottom','yaxisloc','left','fontsize',12);
+
+colorbar()
+
+m_pcolor(X,Y,Z);shading interp;colormap('jet')
+hold on
+m_pcolor(X,Y,Z);shading interp;colormap('jet')
+
+m_contourf(nslon,nlat,vy)   'filled', 'MarkerFaceColor', 'flat', 'MarkerEdgeColor', 'w','linewi',1)
+m_contourf
+m_contour(X,Y,Z,50,'linestyle','none')
+shading flat
+m_coast
+figure(2)
+m_scatter(loc_y(:,3),loc_y(:,4),80,loc_y(:,1),'filled', 'MarkerFaceColor', 'flat', 'MarkerEdgeColor', 'w','linewi',1)
+%
+pcolor(X,Y,Z)
+
+[nslon,nlat]=meshgrid(loc_y(:,3),loc_y(:,4));
+vy
+[X,Y,Z]=griddata(loc_y(:,3),loc_y(:,4),loc_y(:,1),nslon,nlat,'V4');
+[X,Y,Z]=griddata(loc_y(:,3),loc_y(:,4),loc_y(:,1),[118:122.5],[29.5:33],'V4');
+
+yp=a.y_pred;
+y=a.y_test;
+x=a.x_test;
+
+slon1=slon(slon>118 & slon<122.5);
+slat1=slat(slat>29.5 & slat<33);
+
+lon=unique(x(:,1));
+lat=unique(x(:,2));
+dd=unique(x(:,31));%month
+mm=unique(x(:,32));%day
+DJF=find(x(:,31)==12 | x(:,31)==1 | x(:,31)==2);
+SON=find(x(:,31)==11 | x(:,31)==10 | x(:,31)==9);
+JJA=find(x(:,31)==8 | x(:,31)==7 | x(:,31)==6);
+MAM=find(x(:,31)==3 | x(:,31)==4 | x(:,31)==5);
+N=0;
+list=zeros(24103,1);
+for i=1:length(lon)
+    for j=1:length(lat)
+        loc_ind1=find(x(:,1)==lon(i)); 
+        loc_ind2=find(x(:,2)==lat(j));
+        loc_ind=intersect(loc_ind1,loc_ind2);
+        if (loc_ind>0)
+            N=N+1;
+            list(loc_ind)=N;%same station
+        end
+    end
+end
+loc_y=zeros(N,4);%站点的所有均值
+for k=1:N
+    p=find(list==k);
+    loc_y(k,1)=mean(y(p));%observed
+    loc_y(k,2)=mean(yp(p));%model
+    loc_y(k,3)=unique(x(p,1));%lon
+    loc_y(k,4)=unique(x(p,2));%lat
+end
+R_station=zeros(N,2);
+for k=1:N
+    p=find(list==k);
+    te=corrcoef(y(p),yp(p));
+    rmse = sqrt(mean((yp(p)-y(p)).^2));
+
+    R_station(k,1)=(te(1,2))^2;%R^2
+    R_station(k,2)=rmse;%RMSE
+end
